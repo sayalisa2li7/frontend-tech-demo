@@ -9,7 +9,7 @@ useEffect(() => {
 const performLogout = async () => {
 try {
 await logoutUser();
-router.push('/login'); // Redirect to login page after logout
+router.push('/home'); // Redirect to login page after logout
 } catch (err) {
 console.error('Logout failed:', err);
 }

@@ -21,15 +21,6 @@ const Navbar = () => {
         <li className={`${styles.navItem} ${router.pathname === '/top-gainers-losers' ? styles.active : ''}`}>
           <Link href="/top-gainers-losers">Top Gainers Losers</Link>
         </li>
-        <li className={`${styles.navItem} ${router.pathname === '/daily-report' ? styles.active : ''}`}>
-          <Link href="/daily-report">Daily Report</Link>
-        </li>
-        <li className={`${styles.navItem} ${router.pathname === '/weekly-report' ? styles.active : ''}`}>
-          <Link href="/weekly-report">Weekly Report</Link>
-        </li>
-        <li className={`${styles.navItem} ${router.pathname === '/monthly-report' ? styles.active : ''}`}>
-          <Link href="/monthly-report">Monthly Report</Link>
-        </li>
         <li className={`${styles.navItem} ${router.pathname === '/logout' ? styles.active : ''}`}>
           <Link href="/logout">Logout</Link>
         </li>
