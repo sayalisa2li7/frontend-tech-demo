@@ -1,8 +1,7 @@
-// pages/top-gainers-losers.js
 import { useState } from 'react';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subWeeks, subMonths } from 'date-fns';
 import { fetchTopGainersLosers } from '../lib/api';
 import Navbar from '../components/Navbar';
 import '../styles/global.css';
@@ -11,53 +10,45 @@ import useAuth from '../components/useAuth';
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const getTopGainersAndLosers = (data, period) => {
-    const groupedData = {};
-
-    data.forEach((entry) => {
-        const date = new Date(entry.date);
-        let periodKey;
-
-        if (period === 'weekly') {
-            const startOfWeekDate = startOfWeek(date);
-            const endOfWeekDate = endOfWeek(date);
-            periodKey = `${format(startOfWeekDate, 'yyyy-MM-dd')}_${format(endOfWeekDate, 'yyyy-MM-dd')}`;
-        } else if (period === 'monthly') {
-            const startOfMonthDate = startOfMonth(date);
-            const endOfMonthDate = endOfMonth(date);
-            periodKey = `${format(startOfMonthDate, 'yyyy-MM-dd')}_${format(endOfMonthDate, 'yyyy-MM-dd')}`;
-        } else {
-            periodKey = format(date, 'yyyy-MM-dd');
-        }
-
-        if (!groupedData[periodKey]) {
-            groupedData[periodKey] = { gainers: [], losers: [] };
-        }
-
-        groupedData[periodKey].gainers.push(entry);
-        groupedData[periodKey].losers.push(entry);
-    });
-
+const getTopGainersAndLosers = (data, period, currentDate) => {
     const results = { gainers: [], losers: [] };
 
-    Object.keys(groupedData).forEach((key) => {
-        const periodEntries = groupedData[key];
+    // Define period boundaries
+    const startOfPeriod = {
+        weekly: startOfWeek(subWeeks(currentDate, 1), { weekStartsOn: 0 }),
+        monthly: startOfMonth(subMonths(currentDate, 1)),
+        yearly: startOfYear(currentDate)
+    };
+    const endOfPeriod = {
+        weekly: endOfWeek(subWeeks(currentDate, 1), { weekStartsOn: 0 }),
+        monthly: endOfMonth(subMonths(currentDate, 1)),
+        yearly: endOfYear(currentDate)
+    };
 
-        const sortedGainers = periodEntries.gainers.sort((a, b) => b.price_change_percentage - a.price_change_percentage);
-        const sortedLosers = periodEntries.losers.sort((a, b) => a.price_change_percentage - b.price_change_percentage);
+    const periodData = data.filter(entry => {
+        const date = new Date(entry.date);
 
-        if (sortedGainers.length > 0) {
-            results.gainers.push(sortedGainers[0]);
+        if (period === 'weekly') {
+            return date >= startOfPeriod.weekly && date <= endOfPeriod.weekly;
+        } else if (period === 'monthly') {
+            return date >= startOfPeriod.monthly && date <= endOfPeriod.monthly;
+        } else if (period === 'yearly') {
+            return date >= startOfPeriod.yearly && date <= endOfPeriod.yearly;
         }
-        if (sortedLosers.length > 0) {
-            results.losers.push(sortedLosers[0]);
-        }
+
+        return false;
     });
+
+    const sortedGainers = periodData.sort((a, b) => b.price_change_percentage - a.price_change_percentage).slice(0, 10);
+    const sortedLosers = periodData.sort((a, b) => a.price_change_percentage - b.price_change_percentage).slice(0, 10);
+
+    results.gainers = sortedGainers;
+    results.losers = sortedLosers;
 
     return results;
 };
 
-const TopGainersLosers = ({ gainers, losers, weekly, monthly }) => {
+const TopGainersLosers = ({ gainers, losers, weekly, monthly, yearly }) => {
     useAuth();
     const [selectedPeriod, setSelectedPeriod] = useState('daily');
     const [selectedData, setSelectedData] = useState('gainers');
@@ -66,14 +57,18 @@ const TopGainersLosers = ({ gainers, losers, weekly, monthly }) => {
     const handleDataChange = (e) => setSelectedData(e.target.value);
 
     const getPeriodData = () => {
+        const today = new Date();
         if (selectedPeriod === 'daily') {
-            return selectedData === 'gainers' ? gainers : losers.sort((a, b) => a.price_change_percentage - b.price_change_percentage);
+            return selectedData === 'gainers' ? gainers : losers;
         }
         if (selectedPeriod === 'weekly') {
-            return selectedData === 'gainers' ? weekly.gainers : weekly.losers.sort((a, b) => a.price_change_percentage - b.price_change_percentage);
+            return selectedData === 'gainers' ? weekly.gainers : weekly.losers;
         }
         if (selectedPeriod === 'monthly') {
-            return selectedData === 'gainers' ? monthly.gainers : monthly.losers.sort((a, b) => a.price_change_percentage - b.price_change_percentage);
+            return selectedData === 'gainers' ? monthly.gainers : monthly.losers;
+        }
+        if (selectedPeriod === 'yearly') {
+            return selectedData === 'gainers' ? yearly.gainers : yearly.losers;
         }
         return [];
     };
@@ -126,6 +121,7 @@ const TopGainersLosers = ({ gainers, losers, weekly, monthly }) => {
                     <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>
                     <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
                 </select>
 
                 <label htmlFor="data">Data:</label>
@@ -163,19 +159,22 @@ const TopGainersLosers = ({ gainers, losers, weekly, monthly }) => {
 };
 
 export async function getServerSideProps() {
+    const today = new Date();
     const dailyGainers = await fetchTopGainersLosers(true);
     const dailyLosers = await fetchTopGainersLosers(false);
 
-    // Process data to get weekly and monthly top gainers and losers
-    const weekly = getTopGainersAndLosers(dailyGainers.concat(dailyLosers), 'weekly');
-    const monthly = getTopGainersAndLosers(dailyGainers.concat(dailyLosers), 'monthly');
+    // Process data to get weekly, monthly, and yearly top gainers and losers
+    const weekly = getTopGainersAndLosers(dailyGainers.concat(dailyLosers), 'weekly', today);
+    const monthly = getTopGainersAndLosers(dailyGainers.concat(dailyLosers), 'monthly', today);
+    const yearly = getTopGainersAndLosers(dailyGainers.concat(dailyLosers), 'yearly', today);
 
     return { 
         props: { 
             gainers: dailyGainers,
             losers: dailyLosers,
             weekly,
-            monthly 
+            monthly,
+            yearly
         } 
     };
 }

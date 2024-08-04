@@ -43,6 +43,7 @@ const PriceChangePercentage = ({ initialData }) => {
                 const dailyChange = calculatePercentageChange(parseFloat(tickerData[tickerData.length - 1].open), dailyClose);
                 const weeklyChange = calculateChange(initialData, ticker, 7);
                 const monthlyChange = calculateChange(initialData, ticker, 30);
+                const yearlyChange = calculateChange(initialData, ticker, 365);
 
                 return {
                     ticker,
@@ -50,6 +51,7 @@ const PriceChangePercentage = ({ initialData }) => {
                     daily_change: dailyChange,
                     weekly_change: weeklyChange,
                     monthly_change: monthlyChange,
+                    yearly_change: yearlyChange,
                 };
             }
             return null;
@@ -90,6 +92,15 @@ const PriceChangePercentage = ({ initialData }) => {
                 data: filteredData.map(entry => parseFloat(entry.monthly_change)),
                 backgroundColor: 'rgba(255, 159, 64, 0.2)',
                 borderColor: 'rgba(255, 159, 64, 1)',
+                borderWidth: 1,
+                categoryPercentage: 0.5,
+                barPercentage: 0.8,
+            },
+            {
+                label: 'Yearly Change (%)',
+                data: filteredData.map(entry => parseFloat(entry.yearly_change)),
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
                 borderWidth: 1,
                 categoryPercentage: 0.5,
                 barPercentage: 0.8,
@@ -160,12 +171,13 @@ const PriceChangePercentage = ({ initialData }) => {
                         <th>% Change (Daily)</th>
                         <th>% Change (Weekly)</th>
                         <th>% Change (Monthly)</th>
+                        <th>% Change (Yearly)</th>
                     </tr>
                 </thead>
                 <tbody>
                     {filteredData.length === 0 ? (
                         <tr>
-                            <td colSpan="5">No data available.</td>
+                            <td colSpan="6">No data available.</td>
                         </tr>
                     ) : (
                         filteredData.map((entry) => (
@@ -175,6 +187,7 @@ const PriceChangePercentage = ({ initialData }) => {
                                 <td>{entry.daily_change}%</td>
                                 <td>{entry.weekly_change}%</td>
                                 <td>{entry.monthly_change}%</td>
+                                <td>{entry.yearly_change}%</td>
                             </tr>
                         ))
                     )}
