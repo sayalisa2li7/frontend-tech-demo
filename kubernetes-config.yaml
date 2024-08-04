@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: nextjs-container
-        image: sayalisa2li7/frontend_techdemo:1.2
+        image: sayalisa2li7/frontend_techdemo:1.4
         ports:
         - containerPort: 3000
         resources:

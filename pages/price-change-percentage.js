@@ -1,9 +1,13 @@
-// pages/price-change-percentage.js
 import { useState, useEffect } from 'react';
 import { fetchPriceChangePercentage } from '../lib/api';
 import Navbar from '../components/Navbar';
 import '../styles/global.css';
 import useAuth from '../components/useAuth';
+import { Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+
+// Register necessary components for Chart.js
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const calculatePercentageChange = (start, end) => {
     return ((end - start) / start * 100).toFixed(2);
@@ -27,11 +31,9 @@ const calculateChange = (data, ticker, days) => {
 const PriceChangePercentage = ({ initialData }) => {
     useAuth();
     const [data, setData] = useState([]);
+    const [selectedTicker, setSelectedTicker] = useState('All');
 
     useEffect(() => {
-        // Debugging: log initial data
-        console.log('Initial Data:', initialData);
-
         // Aggregate data by ticker
         const tickers = [...new Set(initialData.map(entry => entry.ticker))];
         const processedData = tickers.map(ticker => {
@@ -56,11 +58,100 @@ const PriceChangePercentage = ({ initialData }) => {
         setData(processedData);
     }, [initialData]);
 
+    const handleTickerChange = (event) => {
+        setSelectedTicker(event.target.value);
+    };
+
+    const filteredData = selectedTicker === 'All' ? data : data.filter(item => item.ticker === selectedTicker);
+
+    const chartData = {
+        labels: filteredData.map(entry => entry.ticker),
+        datasets: [
+            {
+                label: 'Daily Change (%)',
+                data: filteredData.map(entry => parseFloat(entry.daily_change)),
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1,
+                categoryPercentage: 0.5,
+                barPercentage: 0.8,
+            },
+            {
+                label: 'Weekly Change (%)',
+                data: filteredData.map(entry => parseFloat(entry.weekly_change)),
+                backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                borderColor: 'rgba(153, 102, 255, 1)',
+                borderWidth: 1,
+                categoryPercentage: 0.5,
+                barPercentage: 0.8,
+            },
+            {
+                label: 'Monthly Change (%)',
+                data: filteredData.map(entry => parseFloat(entry.monthly_change)),
+                backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                borderColor: 'rgba(255, 159, 64, 1)',
+                borderWidth: 1,
+                categoryPercentage: 0.5,
+                barPercentage: 0.8,
+            },
+        ],
+    };
+
     return (
         <div>
             <Navbar />
             <h1>Price Change Percentage Report</h1>
-            
+
+            <label htmlFor="ticker-filter">Filter by Ticker:</label>
+            <select id="ticker-filter" onChange={handleTickerChange} value={selectedTicker}>
+                <option value="All">All</option>
+                {[...new Set(initialData.map(entry => entry.ticker))].map(ticker => (
+                    <option key={ticker} value={ticker}>{ticker}</option>
+                ))}
+            </select>
+
+            <Bar data={chartData} options={{
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += `${context.parsed.y.toFixed(2)}%`;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Ticker'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Percentage Change (%)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return `${value}%`;
+                            }
+                        }
+                    }
+                }
+            }} />
+
             <table>
                 <thead>
                     <tr>
@@ -72,12 +163,12 @@ const PriceChangePercentage = ({ initialData }) => {
                     </tr>
                 </thead>
                 <tbody>
-                    {data.length === 0 ? (
+                    {filteredData.length === 0 ? (
                         <tr>
                             <td colSpan="5">No data available.</td>
                         </tr>
                     ) : (
-                        data.map((entry) => (
+                        filteredData.map((entry) => (
                             <tr key={entry.ticker}>
                                 <td>{entry.ticker}</td>
                                 <td>{entry.daily_closing_price}</td>

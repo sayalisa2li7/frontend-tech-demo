@@ -1,10 +1,15 @@
 // pages/top-gainers-losers.js
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { useState } from 'react';
+import { Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { fetchTopGainersLosers } from '../lib/api';
 import Navbar from '../components/Navbar';
 import '../styles/global.css';
 import useAuth from '../components/useAuth';
+
+// Register Chart.js components
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const getTopGainersAndLosers = (data, period) => {
     const groupedData = {};
@@ -22,7 +27,6 @@ const getTopGainersAndLosers = (data, period) => {
             const endOfMonthDate = endOfMonth(date);
             periodKey = `${format(startOfMonthDate, 'yyyy-MM-dd')}_${format(endOfMonthDate, 'yyyy-MM-dd')}`;
         } else {
-            // Default to daily if period is not recognized
             periodKey = format(date, 'yyyy-MM-dd');
         }
 
@@ -39,11 +43,9 @@ const getTopGainersAndLosers = (data, period) => {
     Object.keys(groupedData).forEach((key) => {
         const periodEntries = groupedData[key];
 
-        // Sort gainers and losers separately and pick the top entry
         const sortedGainers = periodEntries.gainers.sort((a, b) => b.price_change_percentage - a.price_change_percentage);
         const sortedLosers = periodEntries.losers.sort((a, b) => a.price_change_percentage - b.price_change_percentage);
 
-        // Pick top entry if available
         if (sortedGainers.length > 0) {
             results.gainers.push(sortedGainers[0]);
         }
@@ -65,24 +67,59 @@ const TopGainersLosers = ({ gainers, losers, weekly, monthly }) => {
 
     const getPeriodData = () => {
         if (selectedPeriod === 'daily') {
-            return selectedData === 'gainers' ? gainers : losers.sort((a, b) => a.price_change_percentage - b.price_change_percentage); // Ensure correct sorting for losers
+            return selectedData === 'gainers' ? gainers : losers.sort((a, b) => a.price_change_percentage - b.price_change_percentage);
         }
         if (selectedPeriod === 'weekly') {
-            return selectedData === 'gainers' ? weekly.gainers : weekly.losers;
+            return selectedData === 'gainers' ? weekly.gainers : weekly.losers.sort((a, b) => a.price_change_percentage - b.price_change_percentage);
         }
         if (selectedPeriod === 'monthly') {
-            return selectedData === 'gainers' ? monthly.gainers : monthly.losers;
+            return selectedData === 'gainers' ? monthly.gainers : monthly.losers.sort((a, b) => a.price_change_percentage - b.price_change_percentage);
         }
         return [];
     };
 
     const data = getPeriodData();
 
+    const chartData = {
+        labels: data.map(entry => entry.ticker),
+        datasets: [{
+            label: `Top ${selectedData.charAt(0).toUpperCase() + selectedData.slice(1)} (${selectedPeriod.charAt(0).toUpperCase() + selectedPeriod.slice(1)})`,
+            data: data.map(entry => entry.price_change_percentage),
+            backgroundColor: selectedData === 'gainers' ? 'rgba(75, 192, 192, 0.2)' : 'rgba(255, 99, 132, 0.2)',
+            borderColor: selectedData === 'gainers' ? 'rgba(75, 192, 192, 1)' : 'rgba(255, 99, 132, 1)',
+            borderWidth: 1
+        }]
+    };
+
+    const chartOptions = {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(tooltipItem) {
+                        return `${tooltipItem.label}: ${tooltipItem.raw}%`;
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                beginAtZero: true
+            },
+            y: {
+                beginAtZero: true
+            }
+        }
+    };
+
     return (
         <div>
             <Navbar />
             <h1>Top Gainers and Losers</h1>
-            
+
             <div className="dropdowns">
                 <label htmlFor="period">Period:</label>
                 <select id="period" value={selectedPeriod} onChange={handlePeriodChange}>
@@ -90,7 +127,7 @@ const TopGainersLosers = ({ gainers, losers, weekly, monthly }) => {
                     <option value="weekly">Weekly</option>
                     <option value="monthly">Monthly</option>
                 </select>
-                
+
                 <label htmlFor="data">Data:</label>
                 <select id="data" value={selectedData} onChange={handleDataChange}>
                     <option value="gainers">Gainers</option>
@@ -99,6 +136,10 @@ const TopGainersLosers = ({ gainers, losers, weekly, monthly }) => {
             </div>
 
             <h2>Top {selectedData.charAt(0).toUpperCase() + selectedData.slice(1)} ({selectedPeriod.charAt(0).toUpperCase() + selectedPeriod.slice(1)})</h2>
+
+            <Bar data={chartData} options={chartOptions} />
+
+            <h2>Table View</h2>
             <table>
                 <thead>
                     <tr>
@@ -112,7 +153,7 @@ const TopGainersLosers = ({ gainers, losers, weekly, monthly }) => {
                         <tr key={`${entry.date}-${entry.ticker}`}>
                             <td>{entry.date}</td>
                             <td>{entry.ticker}</td>
-                            <td>{entry.price_change_percentage}</td>
+                            <td>{entry.price_change_percentage}%</td>
                         </tr>
                     ))}
                 </tbody>
