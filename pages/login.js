@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { loginUser } from '../lib/api';
+import Link from 'next/link'; // Import Link from next/link
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -42,7 +43,7 @@ export default function Login() {
           <button type="submit" style={styles.button}>Login</button>
           {error && <p style={styles.error}>{error}</p>}
           <p style={styles.registerLink}>
-            Don't have an account? <a href="/register" style={styles.registerLinkText}>Register here</a>
+            Don&apos;t have an account? <Link href="/register" style={styles.registerLinkText}>Register here</Link>
           </p>
         </form>
       </div>
@@ -106,8 +107,6 @@ const styles = {
   registerLinkText: {
     color: '#007bff',
     textDecoration: 'none',
-  },
-  registerLinkTextHover: {
-    textDecoration: 'underline',
+    transition: 'text-decoration 0.3s',
   },
 };

@@ -1,7 +1,11 @@
+import Link from 'next/link';
 import Navbar from '../components/Navbar';
+import { useState } from 'react';
 import '../styles/global.css';
 
 export default function Home() {
+    const [isHovered, setIsHovered] = useState(false);
+
     return (
         <div style={styles.container}>
             <Navbar />
@@ -9,7 +13,15 @@ export default function Home() {
                 <section style={styles.hero}>
                     <h1 style={styles.heroTitle}>Welcome to Stock Tracker</h1>
                     <p style={styles.heroSubtitle}>Track and analyze stock market data with ease.</p>
-                    <a href="/login" style={styles.ctaButton}>Get Started</a>
+                    <Link href="/login" passHref>
+                        <div 
+                            style={{ ...styles.ctaButton, ...(isHovered ? styles.ctaButtonHover : {}) }}
+                            onMouseEnter={() => setIsHovered(true)}
+                            onMouseLeave={() => setIsHovered(false)}
+                        >
+                            Get Started
+                        </div>
+                    </Link>
                 </section>
                 <section style={styles.features}>
                     <div style={styles.featureCard}>
@@ -69,10 +81,12 @@ const styles = {
         backgroundColor: '#007bff',
         borderRadius: '5px',
         textDecoration: 'none',
-        transition: 'background-color 0.3s',
+        transition: 'background-color 0.3s, transform 0.3s',
+        cursor: 'pointer',
     },
     ctaButtonHover: {
         backgroundColor: '#0056b3',
+        transform: 'scale(1.05)',
     },
     features: {
         display: 'flex',
@@ -88,6 +102,7 @@ const styles = {
         width: '30%',
         textAlign: 'left',
         minWidth: '250px',
+        transition: 'transform 0.3s, box-shadow 0.3s',
     },
     featureTitle: {
         fontSize: '1.5rem',
