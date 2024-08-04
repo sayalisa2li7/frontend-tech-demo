@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
+const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -9,7 +10,7 @@ export default function Register() {
 
   const handleRegister = async () => {
     try {
-      const response = await axios.post('http://localhost:8000/api/register/', {
+      const response = await axios.post(`${apiUrl}/register/`, {
         username,
         password,
         email
