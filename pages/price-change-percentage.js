@@ -108,6 +108,11 @@ const PriceChangePercentage = ({ initialData }) => {
         ],
     };
 
+    const getChangeColor = (change) => {
+        if (change === 'N/A') return 'black';
+        return parseFloat(change) >= 0 ? 'green' : 'red';
+    };
+
     return (
         <div>
             <Navbar />
@@ -184,10 +189,10 @@ const PriceChangePercentage = ({ initialData }) => {
                             <tr key={entry.ticker}>
                                 <td>{entry.ticker}</td>
                                 <td>{entry.daily_closing_price}</td>
-                                <td>{entry.daily_change}%</td>
-                                <td>{entry.weekly_change}%</td>
-                                <td>{entry.monthly_change}%</td>
-                                <td>{entry.yearly_change}%</td>
+                                <td style={{ color: getChangeColor(entry.daily_change) }}>{entry.daily_change}%</td>
+                                <td style={{ color: getChangeColor(entry.weekly_change) }}>{entry.weekly_change}%</td>
+                                <td style={{ color: getChangeColor(entry.monthly_change) }}>{entry.monthly_change}%</td>
+                                <td style={{ color: getChangeColor(entry.yearly_change) }}>{entry.yearly_change}%</td>
                             </tr>
                         ))
                     )}
