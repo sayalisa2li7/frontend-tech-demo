@@ -33,8 +33,8 @@ COPY --from=build /app/.next /app/.next
 COPY --from=build /app/package.json /app/package.json
 # COPY --from=build /app/.env.local /app/.env.local
 
-# Set default environment variables
-ENV NEXT_PUBLIC_API_URL=http://192.168.49.2:30001/api
+# Copy the .env file into the container
+COPY .env .env
 
 # Expose the port that the application will run on
 EXPOSE 3000
