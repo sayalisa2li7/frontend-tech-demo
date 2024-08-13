@@ -33,7 +33,7 @@ COPY --from=build /app/.next /app/.next
 COPY --from=build /app/package.json /app/package.json
 # COPY --from=build /app/.env.local /app/.env.local
 
-# Copy the .env file into the container
+# Copy the .env file into the container from secrets
 COPY .env .env
 
 # Expose the port that the application will run on
