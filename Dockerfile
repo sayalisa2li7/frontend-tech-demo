@@ -31,7 +31,10 @@ COPY --from=build /app/node_modules /app/node_modules
 # Copy the built Next.js application and other necessary files from the build stage
 COPY --from=build /app/.next /app/.next
 COPY --from=build /app/package.json /app/package.json
-COPY --from=build /app/.env.local /app/.env.local
+# COPY --from=build /app/.env.local /app/.env.local
+
+# Set default environment variables
+ENV NEXT_PUBLIC_API_URL=http://192.168.49.2:30001/api
 
 # Expose the port that the application will run on
 EXPOSE 3000
